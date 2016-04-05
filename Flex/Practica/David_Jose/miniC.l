@@ -2,15 +2,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-int ints = 0, floats = 0, ifs = 0, mains = 0, elses = 0, scanfs = 0, printfs = 0, lineasTotales = 0, lineasComentario = 0, idents = 0;
+int ints = 0, floats = 0, ifs = 0, mains = 0, elses = 0, scanfs = 0, cadenas = 0, printfs = 0, lineasTotales = 0, lineasComentario = 0, idents = 0;
 char *identificadores[100][100];
+char array[20][2];
+int cont = 0, cursor , mal = 0;
 
 %}
 
 letra [a-zA-Z]
 natural [0-9]
 nodigitos [_a-zA-Z]
-puntuacion [,;)}]
+barra ("\")
 input [^\r\n]
 operador [+*=&]
 operador2 ("&&")
@@ -20,8 +22,8 @@ numero ({natural}+("."{natural}+)?)
 ident {letra}({nodigitos}|{natural})*
 variables ((("int"|"float"){blanco}+{ident})(","{blanco}*{ident})*";")
 coment ("//"{input}*{eol}?)
-parentesis (("(")(.|\n|{parentesis})")")
-llaves (("{")(.|\n|{llaves})")")
+cadena \"[^"\n]*["\n]
+llaves [(){}]
 
 %%
 
@@ -32,6 +34,64 @@ llaves (("{")(.|\n|{llaves})")")
 "else"		elses++;
 "main"		mains++;
 "scanf"		scanfs++;
+
+
+{llaves} {
+	if (strcmp(yytext,"(") == 0)
+	{
+		strcpy(array[cont][0],"(");
+		cont++;
+	}
+	if (strcmp(yytext,"{") == 0)
+	{
+		strcpy(array[cont][0],"{") ;
+		cont++;
+	}
+
+
+	if (strcmp(yytext,")") == 0)
+	{
+
+		cursor = 0;
+		
+		while (strcmp(array[cont-cursor][1],NULL) == 0 )
+		{
+			cursor++ ;
+		}
+
+		if (strcmp(array[cont-cursor][0],"(") == 0 )
+		{
+			strcpy(array[cont-cursor][1],")") ;
+		} else{
+			mal = 1;
+		}
+	}
+
+	if (strcmp(yytext,"}") == 0)
+	{
+
+		cursor = 0;
+		
+		while (strcmp(array[cont-cursor][1],NULL) == 0 )
+		{
+			cursor++ ;
+		}
+
+		if (strcmp(array[cont-cursor][0],"{") == 0 )
+		{
+			strcpy(array[cont-cursor][1],"}") ;
+		} else{
+			mal = 1;
+		}
+	}
+	REJECT;
+	cursor = 0 ;
+}
+
+{cadena} {
+	printf("CADENA %s\n",yytext);
+	cadenas++;
+}
 
 {variables} {
 	char entrada[100];
@@ -108,7 +168,8 @@ int main()
 
 	printf("\nints: %d floats: %d if: %d, main: %d, else: %d, scanf: %d, printf: %d\n",ints, floats, ifs, mains, elses, scanfs, printfs);
   	printf("Numero lineas comentario: %d - lineas codigo: %d - lineas totales: %d\n",lineasComentario, lineasTotales-lineasComentario, lineasTotales);
-  	printf("Idents: ");
+  	
+  	printf("\ncadenas: %d\n",cadenas);
 
   	for (int i = 0; i < idents; i++)
   	{
@@ -123,6 +184,12 @@ int main()
   	} 
 
   	printf("\n");
+  	printf("MAL: %d\n", mal);
+  	if (mal == 1){
+  		printf("MAL BALANCEADO\n");
+  	}else{
+  		printf("BIEN BALANCEADO\n");
+  	}
 }
 
 int yywrap()
